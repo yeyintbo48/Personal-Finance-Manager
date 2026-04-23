@@ -4,10 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.personal.financemanager.dtos.TransactionRequest;
+import com.personal.financemanager.entity.PaymentRequest;
 import com.personal.financemanager.entity.Transaction;
+import com.personal.financemanager.entity.User;
 import com.personal.financemanager.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,8 +27,10 @@ public class TransactionController {
     private TransactionService transactionService;
 
     @PostMapping("/add")
-    public ResponseEntity<Transaction> createTransaction(@RequestBody @Valid TransactionRequest request) {
-        return ResponseEntity.ok(transactionService.createTransaction(request));
+    public ResponseEntity<?> createTransaction(@RequestBody @Valid TransactionRequest request,@AuthenticationPrincipal User currentUser) {
+        String userEmail = currentUser.getEmail();
+        Long userId = currentUser.getId();
+        return ResponseEntity.ok(userId + "Transcation added for user:" + userEmail);
     } 
     
     @GetMapping
@@ -48,5 +53,11 @@ public class TransactionController {
     public ResponseEntity<Void> deleteTransaction(@PathVariable Long id){
         transactionService.deleteTransaction(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/pay")
+    public ResponseEntity<String> pay(@RequestBody @Valid PaymentRequest request,@AuthenticationPrincipal User currentUser) {
+        transactionService.processPayment(currentUser.getEmail(),request);
+        return ResponseEntity.ok("Payment Successful");
     }
 }
