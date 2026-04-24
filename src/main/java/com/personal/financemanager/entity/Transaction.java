@@ -3,6 +3,8 @@ package com.personal.financemanager.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.personal.financemanager.dtos.Category;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -30,6 +32,9 @@ public class Transaction {
     
     @Enumerated(EnumType.STRING)
     private TransactionType type;
+
+    @Enumerated(EnumType.STRING)
+    private Category category;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "user_id")
