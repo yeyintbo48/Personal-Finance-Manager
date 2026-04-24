@@ -12,6 +12,11 @@ import com.personal.financemanager.entity.PaymentRequest;
 import com.personal.financemanager.entity.Transaction;
 import com.personal.financemanager.entity.User;
 import com.personal.financemanager.service.TransactionService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +27,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping("/api/transactions")
+@Tag(name = "Transcation Controller",description = "ငွေပေးချေမှုနှင့် မှတ်တမ်းများ စီမံခန့်ခွဲသည့် API များ")
 public class TransactionController {
     @Autowired
     private TransactionService transactionService;
@@ -55,6 +61,13 @@ public class TransactionController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(
+        summary = "ငွေပေးချေမှု ပြုလုပ်ခြင်:",description = "Token ပါရမည့်အပြင်၊ အတည်ပြုရန်အတွက် Password ကိုပါ ထပ်မံစစ်ဆေးပါသည်။")
+        @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Success"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - JWT missing/invalid"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - Wrong password")
+    })
     @PostMapping("/pay")
     public ResponseEntity<String> pay(@RequestBody @Valid PaymentRequest request,@AuthenticationPrincipal User currentUser) {
         transactionService.processPayment(currentUser.getEmail(),request);
