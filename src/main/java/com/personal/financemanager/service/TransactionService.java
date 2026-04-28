@@ -6,19 +6,19 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.personal.financemanager.entity.Account;
 import com.personal.financemanager.entity.Budget;
 import com.personal.financemanager.entity.Expense;
 import com.personal.financemanager.entity.PaymentRequest;
 import com.personal.financemanager.entity.Transaction;
+import com.personal.financemanager.entity.TransactionType;
 import com.personal.financemanager.dtos.TransactionRequest;
 import com.personal.financemanager.entity.User;
 import com.personal.financemanager.repository.AccountRepo;
 import com.personal.financemanager.repository.BudgetRepo;
 import com.personal.financemanager.repository.TransactionRepo;
-import com.personal.financemanager.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -26,8 +26,6 @@ import lombok.RequiredArgsConstructor;
 public class TransactionService {
     private final TransactionRepo transactionRepo;
     private final AuthenticationManager authenticationManager;
-    private final UserRepo userRepo;
-    private final PasswordEncoder passwordEncoder;
     private final AccountRepo accountRepo;
     private final BudgetRepo budgetRepo;
 
@@ -35,31 +33,54 @@ public class TransactionService {
         try{
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userEmail,request.password()));
         }catch(Exception e){
-            throw new RuntimeException("Invalid Passwrod,Password Denied!");
+            throw new RuntimeException("Invalid Password,Password Denied!");
         }
         System.out.println("Processing payment for" + request.amount());
     }
 
     public void processExpense(Expense expense){
-        Optional<Budget> budgetOpt = budgetRepo.findByCategoryAndDate(expense.category(),LocalDate.now());
-        budgetOpt.ifPresent(budget -> {
+        Budget budget = budgetRepo.findByCategoryAndDate(expense.category(),LocalDate.now())
+            .orElseGet(() -> {
+            Budget newBudget = new Budget();
+            newBudget.setCategory(expense.category());
+            newBudget.setDate(LocalDate.now());
+            newBudget.setAmountLimit(1000.0);
+            newBudget.setCurrentSpending(0.0);
+            return newBudget;
+        });
             double newSpending = budget.getCurrentSpending() + expense.amount();
             budget.setCurrentSpending(newSpending);
             budgetRepo.save(budget);
-        });
     }
 
-    public Transaction createTransaction(TransactionRequest request){
-        User user = userRepo.findById(request.userId()).orElseThrow(()-> new RuntimeException("User not found!"));
+    @Transactional
+    public Transaction createTransaction(TransactionRequest request,User currentUser){
         Account account = accountRepo.findById(request.accountId()).orElseThrow(() -> new RuntimeException("Account not found"));
+        if(request.type()==TransactionType.INCOME){
+            account.setBalance(account.getBalance().add(request.amount()));
+        }else if(request.type()==TransactionType.EXPENSE){
+            if(account.getBalance().compareTo(request.amount())<0){
+                throw new RuntimeException("Insufficient balance in your account!");
+            }
+            account.setBalance(account.getBalance().subtract(request.amount()));
+        }
+        accountRepo.save(account);
+
         Transaction transaction = new Transaction();
         transaction.setAmount(request.amount());
         transaction.setDescription(request.description());
         transaction.setDate(LocalDateTime.now());
         transaction.setType(request.type());
-        transaction.setUser(user);
+        transaction.setCategory(request.category());
+        transaction.setUser(currentUser);
         transaction.setAccount(account);
-        return transactionRepo.save(transaction);
+        Transaction savedTransaction =  transactionRepo.save(transaction);
+
+        if(request.type()==TransactionType.EXPENSE){
+            Expense expense = new Expense(null,request.amount().doubleValue(),request.category().name(),request.description(),java.time.LocalDate.now(),"Online Payment");
+            this.processExpense(expense);
+        }
+        return savedTransaction;
     }
 
     public List<Transaction> getAllTransaction(){

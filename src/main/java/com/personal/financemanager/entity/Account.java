@@ -2,6 +2,8 @@ package com.personal.financemanager.entity;
 
 import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -21,7 +23,11 @@ public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String accountname;
+
+    @Column(name = "account_name")
+    private String accountName;
+    
+    @Column(name = "balance")
     private BigDecimal balance;
 
     @ManyToOne(fetch = FetchType.EAGER)

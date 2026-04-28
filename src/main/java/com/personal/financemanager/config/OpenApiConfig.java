@@ -8,16 +8,16 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 
-
 @Configuration
 public class OpenApiConfig {
     @Bean
     public OpenAPI customOpenAPI(){
+        final String securitySchemeName = "bearerAuth";
         return new OpenAPI()
         .info(new Info().title("Finance Manager API").version("1.0"))
-        .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+        .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
         .components(new Components()
-        .addSecuritySchemes("bearerAuth",new SecurityScheme()
+        .addSecuritySchemes(securitySchemeName,new SecurityScheme()
         .name("bearerAuth")
         .type(SecurityScheme.Type.HTTP)
         .scheme("bearer")

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record TransactionRequest(
+    Long id,
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be greater than 0")
     BigDecimal amount,
@@ -16,6 +17,10 @@ public record TransactionRequest(
 
     @NotNull(message = "Type is required")
     TransactionType type,
-    Long userId,
+    
+    @NotNull(message = "category is required!")
+    Category category,
+
+    @NotNull(message = "Account ID is required")
     Long accountId
 ) {}

@@ -1,15 +1,16 @@
 package com.personal.financemanager.controller;
 
 import com.personal.financemanager.repository.TransactionRepo;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.personal.financemanager.dtos.Category;
 import com.personal.financemanager.dtos.TransactionRequest;
+import com.personal.financemanager.entity.Expense;
 import com.personal.financemanager.entity.PaymentRequest;
 import com.personal.financemanager.entity.Transaction;
 import com.personal.financemanager.entity.User;
@@ -19,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,32 +30,28 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/transactions")
 @Tag(name = "Transcation Controller",description = "ငွေပေးချေမှုနှင့် မှတ်တမ်းများ စီမံခန့်ခွဲသည့် API များ")
 public class TransactionController {
     private final TransactionRepo transactionRepo;
-    @Autowired
-    private TransactionService transactionService;
-
-    TransactionController(TransactionRepo transactionRepo) {
-        this.transactionRepo = transactionRepo;
-    }
+    private final TransactionService transactionService;
 
     @PostMapping("/add")
-    public ResponseEntity<?> createTransaction(@RequestBody @Valid TransactionRequest request,@AuthenticationPrincipal User currentUser) {
-        String userEmail = currentUser.getEmail();
-        Long userId = currentUser.getId();
-        return ResponseEntity.ok(userId + "Transcation added for user:" + userEmail);
+    public ResponseEntity <Transaction> createTransaction(@RequestBody @Valid TransactionRequest request,@AuthenticationPrincipal User currentUser) {
+        Transaction savedTransaction = transactionService.createTransaction(request,currentUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedTransaction);
     } 
     
     @GetMapping
-    public ResponseEntity <List<Transaction>> getAllTransaction() {
-        return ResponseEntity.ok(transactionService.getAllTransaction());
+    public ResponseEntity <List<Transaction>> getAllTransaction(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(transactionRepo.findByUserId(currentUser.getId()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity <Optional<Transaction>>getTransactionById(@PathVariable Long id){
-        return ResponseEntity.ok(transactionService.getTransactionById(id));
+    public ResponseEntity<Transaction> getTransactionById(@PathVariable Long id){
+        Transaction transaction = transactionService.getTransactionById(id).orElseThrow(() -> new RuntimeException("Transaction not found!"));
+        return ResponseEntity.ok(transaction);
     }
     
     @PutMapping("/{id}")
@@ -77,7 +75,9 @@ public class TransactionController {
     @PostMapping("/pay")
     public ResponseEntity<String> pay(@RequestBody @Valid PaymentRequest request,@AuthenticationPrincipal User currentUser) {
         transactionService.processPayment(currentUser.getEmail(),request);
-        return ResponseEntity.ok("Payment Successful");
+        Expense expense = new Expense(null,request.amount(),request.category(),"Payment Processed",LocalDate.now(),"Online Payment");
+        transactionService.processExpense(expense);
+        return ResponseEntity.ok("Payment Successful and Budget updated.");
     }
 
     @GetMapping("/history")

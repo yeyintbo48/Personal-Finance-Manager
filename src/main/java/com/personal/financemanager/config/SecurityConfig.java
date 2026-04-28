@@ -23,8 +23,12 @@ public class SecurityConfig{
         http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**").permitAll()
-            .requestMatchers("/v3/api-docs/**","/swagger-ui/**").permitAll()
+            .requestMatchers("/api/auth/**",
+            "/v3/api-docs/**",
+            "/api/accounts/**",
+            "/api/users",
+            "/api/transactions",
+            "/swagger-ui/**").permitAll()
             .anyRequest().authenticated()
         )
         .sessionManagement(session -> session

@@ -14,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,11 @@ public class Transaction {
     private BigDecimal amount;
     private String description;
     private LocalDateTime date;
+
+    @PrePersist
+    protected void onCreate(){
+        date = LocalDateTime.now();
+    }
     
     @Enumerated(EnumType.STRING)
     private TransactionType type;

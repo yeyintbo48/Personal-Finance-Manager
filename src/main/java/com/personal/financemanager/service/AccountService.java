@@ -21,7 +21,7 @@ public class AccountService {
 
     public Account createAccount(AccountRequest request){
         Account account = new Account();
-        account.setAccountname(request.getAccountname());
+        account.setAccountName(request.getAccountName());
         account.setBalance(request.getBalance());
         User user = userRepo.findById(request.getUserId()).orElseThrow(()->new RuntimeException("User not found!"));
         account.setUser(user);
@@ -34,7 +34,7 @@ public class AccountService {
 
     public Account updateAccount(Long id,AccountRequest request){
         Account account = accountRepo.findById(id).orElseThrow(()-> new RuntimeException("Account id not found!"));
-        account.setAccountname(request.getAccountname());
+        account.setAccountName(request.getAccountName());
         account.setBalance(request.getBalance());
         if(request.getUserId() != null){
             User user = userRepo.findById(request.getUserId()).orElseThrow(()->new RuntimeException("User not found"));
