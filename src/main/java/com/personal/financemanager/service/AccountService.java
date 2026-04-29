@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.personal.financemanager.dtos.AccountRequest;
 import com.personal.financemanager.entity.Account;
 import com.personal.financemanager.entity.User;
+import com.personal.financemanager.exception.BusinessException;
 import com.personal.financemanager.repository.AccountRepo;
 import lombok.RequiredArgsConstructor;
 
@@ -23,21 +24,21 @@ public class AccountService {
         Account account = new Account();
         account.setAccountName(request.getAccountName());
         account.setBalance(request.getBalance());
-        User user = userRepo.findById(request.getUserId()).orElseThrow(()->new RuntimeException("User not found!"));
+        User user = userRepo.findById(request.getUserId()).orElseThrow(()->new BusinessException("User not found!"));
         account.setUser(user);
         return accountRepo.save(account);
     }
 
     public Account getAccountById(Long id){
-        return accountRepo.findById(id).orElseThrow(()->new RuntimeException("Account not found with id:" + id));
+        return accountRepo.findById(id).orElseThrow(()->new BusinessException("Account not found with id:" +" " + id));
     }
 
     public Account updateAccount(Long id,AccountRequest request){
-        Account account = accountRepo.findById(id).orElseThrow(()-> new RuntimeException("Account id not found!"));
+        Account account = accountRepo.findById(id).orElseThrow(()-> new BusinessException("Account id not found!"));
         account.setAccountName(request.getAccountName());
         account.setBalance(request.getBalance());
         if(request.getUserId() != null){
-            User user = userRepo.findById(request.getUserId()).orElseThrow(()->new RuntimeException("User not found"));
+            User user = userRepo.findById(request.getUserId()).orElseThrow(()->new BusinessException("User not found"));
             account.setUser(user);
         }
         return accountRepo.save(account);
@@ -45,7 +46,7 @@ public class AccountService {
 
     public void deleteAccount(Long id){
         if(!accountRepo.existsById(id)){
-            throw new RuntimeException("Account not found,can't delete!");
+            throw new BusinessException("Account not found,can't delete!");
         }
         accountRepo.deleteById(id);
     }

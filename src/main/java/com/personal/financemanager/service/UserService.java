@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import com.personal.financemanager.dtos.UserRequest;
 import com.personal.financemanager.entity.User;
+import com.personal.financemanager.exception.BusinessException;
 import com.personal.financemanager.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 
@@ -30,7 +31,7 @@ public class UserService {
     }
 
     public User updateUser(Long id,UserRequest request){
-        User existingUser = userRepo.findById(id).orElseThrow(()-> new RuntimeException("User not found!"));
+        User existingUser = userRepo.findById(id).orElseThrow(()-> new BusinessException("User not found!"));
 
         existingUser.setUsername(request.getUsername());
         existingUser.setEmail(request.getEmail());

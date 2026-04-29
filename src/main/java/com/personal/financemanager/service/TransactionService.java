@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import com.personal.financemanager.entity.Transaction;
 import com.personal.financemanager.entity.TransactionType;
 import com.personal.financemanager.dtos.TransactionRequest;
 import com.personal.financemanager.entity.User;
+import com.personal.financemanager.exception.BusinessException;
 import com.personal.financemanager.repository.AccountRepo;
 import com.personal.financemanager.repository.BudgetRepo;
 import com.personal.financemanager.repository.TransactionRepo;
@@ -33,7 +36,7 @@ public class TransactionService {
         try{
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userEmail,request.password()));
         }catch(Exception e){
-            throw new RuntimeException("Invalid Password,Password Denied!");
+            throw new BusinessException("Invalid Password,Password Denied!",HttpStatus.FORBIDDEN);
         }
         System.out.println("Processing payment for" + request.amount());
     }
@@ -55,12 +58,12 @@ public class TransactionService {
 
     @Transactional
     public Transaction createTransaction(TransactionRequest request,User currentUser){
-        Account account = accountRepo.findById(request.accountId()).orElseThrow(() -> new RuntimeException("Account not found"));
+        Account account = accountRepo.findById(request.accountId()).orElseThrow(() -> new BusinessException("Account not found",HttpStatus.NOT_FOUND));
         if(request.type()==TransactionType.INCOME){
             account.setBalance(account.getBalance().add(request.amount()));
         }else if(request.type()==TransactionType.EXPENSE){
             if(account.getBalance().compareTo(request.amount())<0){
-                throw new RuntimeException("Insufficient balance in your account!");
+                throw new BusinessException("Insufficient balance in your account!");
             }
             account.setBalance(account.getBalance().subtract(request.amount()));
         }
@@ -92,7 +95,7 @@ public class TransactionService {
     }
 
     public Transaction updateTransaction(Long id,TransactionRequest request){
-        Transaction existing  = transactionRepo.findById(id).orElseThrow(()->new RuntimeException("Transcation not found!"));
+        Transaction existing  = transactionRepo.findById(id).orElseThrow(()->new BusinessException("Transcation not found!"));
 
         existing.setAmount(request.amount());
         existing.setDescription(request.description());
