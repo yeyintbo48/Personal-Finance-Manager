@@ -3,12 +3,14 @@ package com.personal.financemanager.controller;
 import com.personal.financemanager.repository.TransactionRepo;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.personal.financemanager.dtos.Category;
 import com.personal.financemanager.dtos.TransactionRequest;
 import com.personal.financemanager.entity.Expense;
 import com.personal.financemanager.entity.PaymentRequest;
@@ -80,14 +82,14 @@ public class TransactionController {
         return ResponseEntity.ok("Payment Successful and Budget updated.");
     }
 
-    @GetMapping("/history")
-    public ResponseEntity<List<Transaction>> getHistory(@AuthenticationPrincipal User currentUser,@RequestParam(required = false)Category category) {
-        List <Transaction> transactions;
-        if(category != null){
-            transactions = transactionRepo.findByUserIdAndCategory(currentUser.getId(),category);
-        }else{
-            transactions = transactionRepo.findByUserId(currentUser.getId());
-        }
+    @GetMapping("/history/paged")
+    public ResponseEntity<Page<Transaction>> getPagedHistory(
+        @AuthenticationPrincipal User currentUser,
+        @RequestParam(defaultValue = "0" )int page,
+        @RequestParam(defaultValue = "10")int size
+    ){
+        PageRequest pageable = PageRequest.of(page,size,Sort.by("transactionDate").descending());
+        Page<Transaction> transactions = transactionRepo.findByUserId(currentUser.getId(),pageable);
         return ResponseEntity.ok(transactions);
     }
 }
